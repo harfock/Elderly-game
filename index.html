@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>數字配對遊戲 - Match Game</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <style>
+        body { margin: 0; background-color: #000; font-family: sans-serif; overflow: hidden; touch-action: none; }
+        #root { height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: space-around; padding: 10px; box-sizing: border-box; }
+        .title { color: white; font-size: 32px; font-weight: bold; text-align: center; margin: 10px 0; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 400px; }
+        .tile { height: 140px; border-radius: 15px; border: 6px solid #fff; font-size: 70px; font-weight: 900; color: #fff; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: transform 0.1s; }
+        .tile:active { transform: scale(0.9); }
+        .slots { display: flex; gap: 10px; height: 100px; }
+        .slot { width: 70px; height: 90px; border: 3px dashed #444; border-radius: 10px; display: flex; align-items: center; justify-content: center; }
+        .small-tile { width: 100%; height: 100%; border-radius: 8px; font-size: 35px; color: #fff; display: flex; align-items: center; justify-content: center; border: 2px solid #fff; }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        const COLORS = ['#FF3B30', '#FFCC00', '#007AFF', '#444444']; // 紅, 黃, 藍, 深灰(代黑)
+        const NUMBERS = [1, 2, 3, 4, 5, 6, 7, 8, 9];
+
+        function App() {
+            const [pool, setPool] = useState([]);
+            const [selected, setSelected] = useState([]);
+            const [msg, setMsg] = useState("揀 3 個一樣色或者數字");
+
+            const startSet = () => {
+                const newTiles = Array.from({ length: 6 }, () => ({
+                    id: Math.random(),
+                    num: NUMBERS[Math.floor(Math.random() * NUMBERS.length)],
+                    col: COLORS[Math.floor(Math.random() * COLORS.length)]
+                }));
+                setPool(newTiles);
+                setSelected([]);
+            };
+
+            useEffect(() => { startSet(); }, []);
+
+            const handleClick = (t) => {
+                if (selected.length >= 3 || selected.find(s => s.id === t.id)) return;
+                const next = [...selected, t];
+                setSelected(next);
+
+                if (next.length === 3) {
+                    const win = next.every(x => x.num === next[0].num) || next.every(x => x.col === next[0].col);
+                    if (win) {
+                        setMsg("🎉 啱晒！好叻呀！");
+                        setTimeout(() => { startSet(); setMsg("揀 3 個一樣色或者數字"); }, 1500);
+                    } else {
+                        setMsg("❌ 唔係呢個，再試下");
+                        setTimeout(() => setSelected([]), 1000);
+                    }
+                }
+            };
+
+            return (
+                <React.Fragment>
+                    <div className="title">{msg}</div>
+                    <div className="grid">
+                        {pool.map(t => (
+                            <div key={t.id} onClick={() => handleClick(t)} className="tile" 
+                                 style={{ backgroundColor: t.col, opacity: selected.find(s => s.id === t.id) ? 0.2 : 1 }}>
+                                {t.num}
+                            </div>
+                        ))}
+                    </div>
+                    <div className="slots">
+                        {[0, 1, 2].map(i => (
+                            <div key={i} className="slot">
+                                {selected[i] && <div className="small-tile" style={{backgroundColor: selected[i].col}}>{selected[i].num}</div>}
+                            </div>
+                        ))}
+                    </div>
+                </React.Fragment>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
