@@ -8,28 +8,38 @@
     <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
     <style>
-        :root { --bg: #000; --text: #fff; --accent: #FFCC00; }
-        body { margin: 0; background-color: var(--bg); font-family: sans-serif; color: var(--text); overflow: hidden; touch-action: none; }
+        :root { --bg: #000; --text: #fff; --accent: #FFCC00; --blue: #007AFF; }
+        body { margin: 0; background-color: var(--bg); font-family: sans-serif; color: var(--text); overflow: hidden; touch-action: manipulation; }
         #root { height: 100vh; display: flex; flex-direction: column; }
         
+        /* Profile Management */
         .overlay { position: fixed; inset: 0; background: #000; z-index: 100; display: flex; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; }
         .profile-card { background: #222; width: 90%; padding: 20px; margin: 10px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; border: 3px solid #444; }
         .btn-big { background: var(--accent); color: #000; border: none; padding: 15px 30px; font-size: 24px; font-weight: bold; border-radius: 10px; cursor: pointer; }
         .btn-del { background: #ff3b30; color: white; padding: 10px; border-radius: 5px; border: none; }
-        .input-big { font-size: 24px; padding: 10px; width: 80%; border-radius: 10px; margin-bottom: 20px; border: none; }
+        .input-big { font-size: 24px; padding: 15px; width: 80%; border-radius: 10px; margin-bottom: 20px; border: none; }
 
-        .stats-bar { display: flex; justify-content: space-between; padding: 15px; background: #1a1a1a; border-bottom: 2px solid #333; }
-        .rank-box { color: var(--accent); font-size: 18px; line-height: 1.4; }
-        .best-box { color: #4cd964; font-size: 18px; text-align: right; }
+        /* Stats & Header */
+        .stats-bar { display: flex; justify-content: space-between; padding: 10px 15px; background: #1a1a1a; border-bottom: 2px solid #333; height: 60px; align-items: center; }
+        .rank-box { color: var(--accent); font-size: 18px; font-weight: bold; }
+        .best-box { color: #4cd964; font-size: 16px; text-align: right; }
 
-        .instruction { font-size: 26px; text-align: center; padding: 15px; font-weight: bold; min-height: 70px; color: #007AFF; background: #f0f0f0; margin: 5px; border-radius: 10px; }
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; padding: 10px; flex-grow: 1; }
-        .tile { height: 110px; border-radius: 12px; border: 4px solid #fff; font-size: 55px; font-weight: 900; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer; transition: 0.1s; }
-        .slots { display: flex; justify-content: center; gap: 8px; padding: 15px; background: #111; min-height: 110px; }
-        .slot { width: 75px; height: 100px; border: 2px dashed #444; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        /* Game UI */
+        .instruction { font-size: 24px; text-align: center; padding: 10px; font-weight: bold; min-height: 40px; color: var(--blue); background: #fff; margin: 5px; border-radius: 10px; }
+        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px; flex-grow: 1; align-content: start; }
+        .tile { height: 100px; border-radius: 12px; border: 4px solid #fff; font-size: 50px; font-weight: 900; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer; }
         
-        .draw-btn { background: #5856d6; color: white; border: none; width: 95%; align-self: center; padding: 18px; font-size: 28px; border-radius: 15px; margin: 10px 0; font-weight: bold; }
-        .popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: black; padding: 30px; border-radius: 20px; text-align: center; z-index: 200; width: 85%; border: 8px solid var(--accent); }
+        /* Selection Slots */
+        .slots { display: flex; justify-content: center; gap: 10px; padding: 10px; background: #111; height: 100px; }
+        .slot { width: 70px; height: 90px; border: 2px dashed #444; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+        
+        /* Footer Controls */
+        .controls { display: flex; flexDirection: column; padding: 10px; gap: 5px; background: #000; }
+        .draw-btn { background: #5856d6; color: white; border: none; width: 100%; padding: 15px; font-size: 26px; border-radius: 15px; font-weight: bold; cursor: pointer; }
+        .exit-btn { background: none; color: #666; border: none; padding: 5px; font-size: 16px; align-self: center; }
+
+        /* Success Popup */
+        .popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: black; padding: 30px; border-radius: 20px; text-align: center; z-index: 200; width: 80%; border: 8px solid var(--accent); box-shadow: 0 0 50px rgba(255,204,0,0.5); }
     </style>
 </head>
 <body>
@@ -37,7 +47,7 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        const COLORS = ['#FF3B30', '#FFCC00', '#007AFF', '#555555']; // Red, Yellow, Blue, Grey (High Contrast)
+        const COLORS = ['#FF3B30', '#FFCC00', '#007AFF', '#555555']; 
         const RANKS = ["新手", "入門生", "數字達人", "魔力橋大師", "傳奇至尊"];
 
         function App() {
@@ -51,11 +61,6 @@
 
             useEffect(() => { if (user) startNewGame(); }, [user]);
 
-            const saveProfiles = (data) => {
-                setProfiles(data);
-                localStorage.setItem('profiles', JSON.stringify(data));
-            };
-
             const generateTile = () => ({
                 id: Math.random(),
                 num: Math.floor(Math.random() * 9) + 1,
@@ -65,7 +70,7 @@
             const generateWinningSet = () => {
                 const isRun = Math.random() > 0.5;
                 if (isRun) {
-                    const startNum = Math.floor(Math.random() * 7) + 1; // 1-7
+                    const startNum = Math.floor(Math.random() * 7) + 1;
                     const col = COLORS[Math.floor(Math.random() * COLORS.length)];
                     return [
                         { id: Math.random(), num: startNum, col },
@@ -84,6 +89,7 @@
             };
 
             const startNewGame = () => {
+                // Guaranteed win set + 6 random tiles = 9 tiles total
                 const winSet = generateWinningSet();
                 const randomTiles = Array.from({ length: 6 }, generateTile);
                 setPool([...winSet, ...randomTiles].sort(() => 0.5 - Math.random()));
@@ -91,11 +97,15 @@
                 setMsg("搵 3 粒：同色順序 或 唔同色同字");
             };
 
-            const drawCard = () => {
-                // To guarantee win after drawing, if no win exists, inject one
-                const newPool = [...pool, generateTile(), generateTile(), generateTile()].slice(0, 9);
-                setPool(newPool);
-                setMsg("已加新牌！實有答案架！");
+            const drawCardsManual = () => {
+                // Manually add 3 tiles only when user asks
+                if (pool.length >= 12) {
+                    setMsg("畫面牌太多喇，試下搵答案！");
+                    return;
+                }
+                const extra = Array.from({ length: 3 }, generateTile);
+                setPool([...pool, ...extra]);
+                setMsg("已加 3 粒新牌！");
             };
 
             const checkWin = (set) => {
@@ -135,25 +145,35 @@
                     }
                     return p;
                 });
-                saveProfiles(updated);
+                setProfiles(updated);
+                localStorage.setItem('profiles', JSON.stringify(updated));
                 setUser(updated.find(p => p.name === user.name));
             };
 
             if (!user) {
                 return (
                     <div className="overlay">
-                        <h1 style={{fontSize: '36px', margin: '40px 0'}}>揀個名開始玩</h1>
+                        <h1 style={{fontSize: '32px', margin: '30px 0'}}>請選擇名字</h1>
                         {profiles.map(p => (
                             <div key={p.name} className="profile-card">
-                                <div onClick={() => setUser(p)} style={{fontSize: '28px', flexGrow: 1, fontWeight: 'bold'}}>{p.name}</div>
-                                <button className="btn-del" onClick={() => saveProfiles(profiles.filter(x => x.name !== p.name))}>刪除</button>
+                                <div onClick={() => setUser(p)} style={{fontSize: '26px', flexGrow: 1, fontWeight: 'bold'}}>{p.name}</div>
+                                <button className="btn-del" onClick={() => {
+                                    const filtered = profiles.filter(x => x.name !== p.name);
+                                    setProfiles(filtered);
+                                    localStorage.setItem('profiles', JSON.stringify(filtered));
+                                }}>刪除</button>
                             </div>
                         ))}
-                        <div style={{marginTop: '30px', width: '90%', textAlign: 'center'}}>
-                            <input id="n" className="input-big" placeholder="輸入新名字" />
-                            <button className="btn-big" onClick={() => {
+                        <div style={{marginTop: '20px', width: '90%', textAlign: 'center'}}>
+                            <input id="n" className="input-big" placeholder="新玩家名字" />
+                            <button className="btn-big" style={{width: '100%'}} onClick={() => {
                                 const v = document.getElementById('n').value;
-                                if(v) { saveProfiles([...profiles, {name: v, score: 0, best: 0}]); document.getElementById('n').value=''; }
+                                if(v) { 
+                                    const newList = [...profiles, {name: v, score: 0, best: 0}];
+                                    setProfiles(newList);
+                                    localStorage.setItem('profiles', JSON.stringify(newList));
+                                    document.getElementById('n').value=''; 
+                                }
                             }}>新增名字</button>
                         </div>
                     </div>
@@ -164,10 +184,9 @@
                 <React.Fragment>
                     <div className="stats-bar">
                         <div className="rank-box">
-                            <b>{user.name}</b><br/>
-                            {user.score} 分 ({RANKS[Math.min(Math.floor(user.score/50), 4)]})
+                            {user.name} ({RANKS[Math.min(Math.floor(user.score/50), 4)]})
                         </div>
-                        <div className="best-box">最高紀錄<br/>{user.best}</div>
+                        <div className="best-box">最高: {user.best} | 分數: {user.score}</div>
                     </div>
 
                     <div className="instruction">{msg}</div>
@@ -184,20 +203,22 @@
                     <div className="slots">
                         {[0, 1, 2].map(i => (
                             <div key={i} className="slot">
-                                {selected[i] && <div className="tile" style={{backgroundColor: selected[i].col, height: '90px', width: '65px', fontSize: '40px', border: '2px solid white'}}>{selected[i].num}</div>}
+                                {selected[i] && <div className="tile" style={{backgroundColor: selected[i].col, height: '80px', width: '60px', fontSize: '35px', border: '2px solid white'}}>{selected[i].num}</div>}
                             </div>
                         ))}
                     </div>
 
-                    <button className="draw-btn" onClick={drawCard}>找不到？加三張牌</button>
-                    <button onClick={() => setUser(null)} style={{background: 'none', color: '#666', border: 'none', padding: '10px', fontSize: '18px'}}>離開遊戲</button>
+                    <div className="controls">
+                        <button className="draw-btn" onClick={drawCardsManual}>找不到組合？加牌</button>
+                        <button className="exit-btn" onClick={() => setUser(null)}>切換玩家 / 離開</button>
+                    </div>
 
                     {showMilestone && (
                         <div className="popup" onClick={() => setShowMilestone(false)}>
-                            <h2 style={{fontSize: '32px', color: '#4cd964'}}>🎉 太棒了！</h2>
-                            <p style={{fontSize: '24px'}}>你已經完成咗 10 圈遊戲！</p>
-                            <p style={{fontSize: '24px', fontWeight: 'bold'}}>你做得好出色，休息下再玩？</p>
-                            <button className="btn-big" style={{marginTop: '20px', width: '100%'}}>繼續</button>
+                            <h2 style={{fontSize: '32px', color: '#4cd964'}}>🎉 恭喜晒！</h2>
+                            <p style={{fontSize: '22px'}}>你今日已經玩咗 10 局喇！</p>
+                            <p style={{fontSize: '22px', fontWeight: 'bold'}}>好叻呀，休息下再玩？</p>
+                            <button className="btn-big" style={{marginTop: '15px', width: '100%'}}>繼續玩</button>
                         </div>
                     )}
                 </React.Fragment>
