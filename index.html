@@ -1,232 +1,708 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>數字大師 - Senior Rummy Master</title>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <style>
-        :root { --bg: #000; --text: #fff; --accent: #FFCC00; --blue: #007AFF; }
-        body { margin: 0; background-color: var(--bg); font-family: sans-serif; color: var(--text); overflow: hidden; touch-action: manipulation; }
-        #root { height: 100vh; display: flex; flex-direction: column; }
-        
-        /* Profile Management */
-        .overlay { position: fixed; inset: 0; background: #000; z-index: 100; display: flex; flex-direction: column; align-items: center; padding: 20px; overflow-y: auto; }
-        .profile-card { background: #222; width: 90%; padding: 20px; margin: 10px; border-radius: 15px; display: flex; justify-content: space-between; align-items: center; border: 3px solid #444; }
-        .btn-big { background: var(--accent); color: #000; border: none; padding: 15px 30px; font-size: 24px; font-weight: bold; border-radius: 10px; cursor: pointer; }
-        .btn-del { background: #ff3b30; color: white; padding: 10px; border-radius: 5px; border: none; }
-        .input-big { font-size: 24px; padding: 15px; width: 80%; border-radius: 10px; margin-bottom: 20px; border: none; }
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>數字大師</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0a; --bg2: #1c1c1e; --bg3: #2c2c2e;
+  --text: #fff; --muted: #888;
+  --accent: #FFCC00; --blue: #007AFF; --green: #30d158; --red: #ff453a; --purple: #5e5ce6;
+  --card-h: 78px;
+}
+html, body {
+  height: 100%; width: 100%;
+  overflow: hidden;
+  background: var(--bg);
+  font-family: 'PingFang TC','Noto Sans TC',sans-serif;
+  color: var(--text);
+  touch-action: manipulation;
+}
 
-        /* Stats & Header */
-        .stats-bar { display: flex; justify-content: space-between; padding: 10px 15px; background: #1a1a1a; border-bottom: 2px solid #333; height: 60px; align-items: center; }
-        .rank-box { color: var(--accent); font-size: 18px; font-weight: bold; }
-        .best-box { color: #4cd964; font-size: 16px; text-align: right; }
+/* ── SCREENS ── */
+#screen-profile {
+  position: fixed; inset: 0;
+  display: flex; flex-direction: column; align-items: center;
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 16px 16px 60px;
+  background: var(--bg);
+}
+#screen-game {
+  position: fixed; inset: 0;
+  display: none; flex-direction: column;
+  background: var(--bg);
+  overflow: hidden;
+}
 
-        /* Game UI */
-        .instruction { font-size: 24px; text-align: center; padding: 10px; font-weight: bold; min-height: 40px; color: var(--blue); background: #fff; margin: 5px; border-radius: 10px; }
-        .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; padding: 10px; flex-grow: 1; align-content: start; }
-        .tile { height: 100px; border-radius: 12px; border: 4px solid #fff; font-size: 50px; font-weight: 900; display: flex; align-items: center; justify-content: center; color: #fff; cursor: pointer; }
-        
-        /* Selection Slots */
-        .slots { display: flex; justify-content: center; gap: 10px; padding: 10px; background: #111; height: 100px; }
-        .slot { width: 70px; height: 90px; border: 2px dashed #444; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
-        
-        /* Footer Controls */
-        .controls { display: flex; flexDirection: column; padding: 10px; gap: 5px; background: #000; }
-        .draw-btn { background: #5856d6; color: white; border: none; width: 100%; padding: 15px; font-size: 26px; border-radius: 15px; font-weight: bold; cursor: pointer; }
-        .exit-btn { background: none; color: #666; border: none; padding: 5px; font-size: 16px; align-self: center; }
+/* ── PROFILE PAGE ── */
+.title    { font-size: 32px; color: var(--accent); letter-spacing: 2px; margin: 14px 0 4px; }
+.subtitle { font-size: 16px; color: var(--muted); margin-bottom: 14px; }
 
-        /* Success Popup */
-        .popup { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: white; color: black; padding: 30px; border-radius: 20px; text-align: center; z-index: 200; width: 80%; border: 8px solid var(--accent); box-shadow: 0 0 50px rgba(255,204,0,0.5); }
-    </style>
+.profile-list { width: 100%; max-width: 480px; }
+.profile-card {
+  background: var(--bg2); border: 2px solid var(--bg3);
+  border-radius: 14px; padding: 14px 16px; margin-bottom: 10px;
+  display: flex; align-items: center; gap: 10px;
+}
+.p-name { font-size: 24px; font-weight: bold; flex: 1; }
+.p-meta { font-size: 14px; color: var(--muted); line-height: 1.8; text-align: right; min-width: 100px; }
+.btn-go  { background: var(--green); color: #000; border: none; padding: 12px 16px; border-radius: 10px; font-size: 18px; font-weight: bold; cursor: pointer; white-space: nowrap; }
+.btn-del { background: var(--red);   color: #fff; border: none; padding: 12px 14px; border-radius: 10px; font-size: 16px; cursor: pointer; }
+
+.add-area { width: 100%; max-width: 480px; margin-top: 16px; text-align: center; }
+.input-big {
+  font-size: 22px; padding: 14px; width: 100%;
+  border-radius: 12px; margin-bottom: 12px;
+  border: none; background: var(--bg2); color: #fff;
+  outline: 2px solid var(--bg3);
+}
+.btn-big {
+  background: var(--accent); color: #000; border: none;
+  padding: 14px; font-size: 22px; font-weight: bold;
+  border-radius: 12px; cursor: pointer; width: 100%;
+}
+
+.rules-toggle {
+  background: var(--bg2); color: var(--accent);
+  border: 2px solid var(--bg3); border-radius: 12px;
+  padding: 13px 20px; font-size: 19px; font-weight: bold;
+  cursor: pointer; width: 100%; max-width: 480px;
+  margin-top: 16px; text-align: left;
+}
+.rules-panel {
+  background: #111; border: 2px solid var(--bg3);
+  border-radius: 12px; padding: 16px;
+  width: 100%; max-width: 480px; margin-top: 8px; display: none;
+}
+.rules-panel.open { display: block; }
+.rules-panel p  { font-size: 16px; color: #ccc; line-height: 1.9; margin-bottom: 8px; }
+.rules-panel h3 { color: var(--accent); font-size: 18px; margin: 12px 0 4px; }
+.rule-row  { display: flex; gap: 8px; margin: 6px 0 12px; flex-wrap: wrap; align-items: center; }
+.mini-tile {
+  width: 44px; height: 50px; border-radius: 8px;
+  border: 2px solid rgba(255,255,255,0.35);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 22px; font-weight: 900; color: #fff;
+}
+.rule-ok   { color: var(--green); font-size: 16px; font-weight: bold; margin: 8px 0 2px; }
+.rule-bad  { color: var(--red);   font-size: 16px; font-weight: bold; margin: 8px 0 2px; }
+.rule-note { font-size: 14px; color: var(--muted); align-self: center; }
+
+/* ── GAME SCREEN ── */
+
+/* Stats bar */
+#stats-bar {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  background: #111; border-bottom: 2px solid #333;
+  flex-shrink: 0;
+}
+#stat-name {
+  color: var(--accent); font-size: 18px; font-weight: bold;
+  flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+#stat-timer {
+  color: #fff; font-size: 18px; font-variant-numeric: tabular-nums;
+  background: #222; padding: 4px 10px; border-radius: 8px;
+  white-space: nowrap; flex-shrink: 0;
+}
+#stat-score {
+  color: var(--green); font-size: 14px;
+  white-space: nowrap; flex-shrink: 0;
+  text-align: right; line-height: 1.7;
+}
+
+/* Instruction bar */
+#instr-wrap {
+  position: relative; margin: 5px 8px; flex-shrink: 0;
+  overflow: hidden; border-radius: 10px;
+  min-height: 44px; background: #fff;
+  display: flex; align-items: center; justify-content: center;
+}
+#instr-text {
+  font-size: 22px; text-align: center;
+  padding: 7px 12px; font-weight: bold; color: var(--blue);
+  width: 100%;
+}
+
+/* Blink banner */
+@keyframes blink-banner {
+  0%,100% { opacity: 1; }
+  25%,75%  { opacity: 0; }
+  50%      { opacity: 1; }
+}
+#banner {
+  position: absolute; inset: 0;
+  display: none; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+#banner.show { display: flex; }
+#banner-text {
+  font-size: 24px; font-weight: 900; color: #000;
+  background: var(--accent);
+  padding: 6px 28px; border-radius: 8px;
+  animation: blink-banner 0.6s ease-in-out 3 forwards;
+}
+
+/* Mid row */
+#mid-row {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Left ref col */
+#ref-col {
+  width: 58px; flex-shrink: 0;
+  display: flex; flex-direction: column; align-items: center;
+  padding: 8px 3px; gap: 5px;
+  background: #111; border-right: 2px solid #333;
+  overflow: hidden;
+}
+.ref-label { font-size: 12px; color: #555; margin-bottom: 2px; text-align: center; }
+.ref-tile {
+  width: 46px; height: 54px; border-radius: 8px;
+  border: 2px solid rgba(255,255,255,0.25);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px; font-weight: 900; color: #fff;
+}
+
+/* Right section — key fix: flex column, NO flex:1 on grid */
+#right-section {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+/* Grid — shrinkable, scrollable, does NOT fill all space */
+#grid-wrap {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  flex-shrink: 1;
+  flex-grow: 0;
+  /* size to content, up to available space */
+  min-height: 0;
+}
+
+#grid {
+  padding: 6px;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+}
+
+.tile {
+  height: var(--card-h);
+  border-radius: 10px;
+  border: 3px solid rgba(255,255,255,0.65);
+  font-size: 50px; font-weight: 900;
+  display: flex; align-items: center; justify-content: center;
+  color: #fff; cursor: pointer;
+  transition: opacity 0.12s, transform 0.09s;
+  user-select: none; -webkit-user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.tile:active { transform: scale(0.92); }
+.tile.sel { opacity: 0.22; }
+
+/* Gold splitter */
+#splitter {
+  height: 3px;
+  background: var(--accent);
+  flex-shrink: 0;
+  margin: 0 6px;
+  border-radius: 2px;
+}
+
+/* Bottom row: slots + buttons — always hugs the splitter */
+#bottom-row {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+  padding: 8px 8px;
+  gap: 8px;
+  background: #0a0a0a;
+}
+
+#slots-area {
+  display: flex; gap: 8px; align-items: center; flex: 1;
+}
+.slot {
+  width: 62px; height: 72px;
+  border: 2px dashed #3a3a3c; border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+.slot-tile {
+  width: 56px; height: 66px; border-radius: 10px;
+  border: 2px solid rgba(255,255,255,0.55);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 34px; font-weight: 900; color: #fff;
+}
+#slot-count {
+  color: #888; font-size: 14px; line-height: 1.7;
+  text-align: center; flex-shrink: 0;
+}
+
+#btn-col {
+  display: flex; flex-direction: column;
+  gap: 6px; flex-shrink: 0;
+}
+.btn-draw {
+  background: var(--purple); color: #fff; border: none;
+  border-radius: 10px; font-size: 15px; font-weight: bold;
+  padding: 11px 12px; text-align: center; line-height: 1.4;
+  cursor: pointer; white-space: nowrap;
+}
+.btn-exit2 {
+  background: var(--bg2); color: #fff; border: none;
+  border-radius: 10px; font-size: 15px;
+  padding: 9px 12px; text-align: center; line-height: 1.4;
+  cursor: pointer; white-space: nowrap;
+}
+
+/* Milestone */
+#milestone {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.78);
+  z-index: 300; display: none;
+  align-items: center; justify-content: center;
+}
+#milestone.show { display: flex; }
+#ms-box {
+  background: var(--bg2); color: #fff;
+  padding: 28px 24px; border-radius: 20px;
+  text-align: center; width: 85%; max-width: 360px;
+  border: 4px solid var(--accent);
+}
+#ms-box h2 { font-size: 30px; color: var(--green); margin-bottom: 12px; }
+#ms-box p  { font-size: 20px; margin: 6px 0; }
+#ms-box button {
+  background: var(--accent); color: #000; border: none;
+  border-radius: 12px; padding: 14px;
+  font-size: 22px; font-weight: bold;
+  cursor: pointer; width: 100%; margin-top: 16px;
+}
+</style>
 </head>
 <body>
-    <div id="root"></div>
-    <script type="text/babel">
-        const { useState, useEffect } = React;
 
-        const COLORS = ['#FF3B30', '#FFCC00', '#007AFF', '#555555']; 
-        const RANKS = ["新手", "入門生", "數字達人", "魔力橋大師", "傳奇至尊"];
+<!-- ══ PROFILE SCREEN ══ -->
+<div id="screen-profile">
+  <div class="title">數字大師</div>
+  <div class="subtitle">請選擇玩家</div>
+  <div class="profile-list" id="profile-list"></div>
+  <div class="add-area">
+    <input id="new-name" class="input-big" placeholder="輸入新玩家名字" />
+    <button class="btn-big" onclick="addPlayer()">新增玩家</button>
+  </div>
+  <button class="rules-toggle" onclick="toggleRules()">📖 遊戲規則 ▼</button>
+  <div class="rules-panel" id="rules-panel">
+    <p>每次搵出 <b>3 粒</b> 組合。有兩種正確答案：</p>
+    <h3>① 同色順序（Run）</h3>
+    <p>同一顏色，連續三個數字</p>
+    <div class="rule-ok">✅ 正確例子</div>
+    <div class="rule-row">
+      <div class="mini-tile" style="background:#007AFF">3</div>
+      <div class="mini-tile" style="background:#007AFF">4</div>
+      <div class="mini-tile" style="background:#007AFF">5</div>
+    </div>
+    <div class="rule-row">
+      <div class="mini-tile" style="background:#FF3B30">7</div>
+      <div class="mini-tile" style="background:#FF3B30">8</div>
+      <div class="mini-tile" style="background:#FF3B30">9</div>
+    </div>
+    <div class="rule-bad">❌ 錯誤例子</div>
+    <div class="rule-row">
+      <div class="mini-tile" style="background:#007AFF">3</div>
+      <div class="mini-tile" style="background:#FF3B30">4</div>
+      <div class="mini-tile" style="background:#007AFF">5</div>
+      <span class="rule-note">← 顏色唔同</span>
+    </div>
+    <div class="rule-row">
+      <div class="mini-tile" style="background:#007AFF">3</div>
+      <div class="mini-tile" style="background:#007AFF">4</div>
+      <div class="mini-tile" style="background:#007AFF">6</div>
+      <span class="rule-note">← 數字唔連續</span>
+    </div>
+    <h3>② 唔同色同字（Group）</h3>
+    <p>同一數字，三種不同顏色</p>
+    <div class="rule-ok">✅ 正確例子</div>
+    <div class="rule-row">
+      <div class="mini-tile" style="background:#FF3B30">7</div>
+      <div class="mini-tile" style="background:#007AFF">7</div>
+      <div class="mini-tile" style="background:#FFCC00">7</div>
+    </div>
+    <div class="rule-row">
+      <div class="mini-tile" style="background:#FF3B30">2</div>
+      <div class="mini-tile" style="background:#555">2</div>
+      <div class="mini-tile" style="background:#FFCC00">2</div>
+    </div>
+    <div class="rule-bad">❌ 錯誤例子</div>
+    <div class="rule-row">
+      <div class="mini-tile" style="background:#FF3B30">7</div>
+      <div class="mini-tile" style="background:#007AFF">7</div>
+      <div class="mini-tile" style="background:#007AFF">7</div>
+      <span class="rule-note">← 顏色重複</span>
+    </div>
+    <div class="rule-row">
+      <div class="mini-tile" style="background:#FF3B30">7</div>
+      <div class="mini-tile" style="background:#007AFF">7</div>
+      <div class="mini-tile" style="background:#FFCC00">8</div>
+      <span class="rule-note">← 數字唔同</span>
+    </div>
+    <p style="color:#666;font-size:14px;margin-top:12px">搵唔到？按「加牌」加多 3 粒，必有答案！每次搵啱 +10 分</p>
+  </div>
+</div>
 
-        function App() {
-            const [user, setUser] = useState(null);
-            const [profiles, setProfiles] = useState(JSON.parse(localStorage.getItem('profiles') || '[]'));
-            const [pool, setPool] = useState([]);
-            const [selected, setSelected] = useState([]);
-            const [msg, setMsg] = useState("");
-            const [rounds, setRounds] = useState(0);
-            const [showMilestone, setShowMilestone] = useState(false);
+<!-- ══ GAME SCREEN ══ -->
+<div id="screen-game">
 
-            useEffect(() => { if (user) startNewGame(); }, [user]);
+  <div id="stats-bar">
+    <div id="stat-name">玩家</div>
+    <div id="stat-timer">⏱ 00:00</div>
+    <div id="stat-score">個人最佳: 0<br>本局分數: 0</div>
+  </div>
 
-            const generateTile = () => ({
-                id: Math.random(),
-                num: Math.floor(Math.random() * 9) + 1,
-                col: COLORS[Math.floor(Math.random() * COLORS.length)]
-            });
+  <div id="instr-wrap">
+    <div id="instr-text">搵 3 粒：同色順序 或 唔同色同字</div>
+    <div id="banner"><div id="banner-text">🎉 叻，你選對了！</div></div>
+  </div>
 
-            const generateWinningSet = () => {
-                const isRun = Math.random() > 0.5;
-                if (isRun) {
-                    const startNum = Math.floor(Math.random() * 7) + 1;
-                    const col = COLORS[Math.floor(Math.random() * COLORS.length)];
-                    return [
-                        { id: Math.random(), num: startNum, col },
-                        { id: Math.random(), num: startNum + 1, col },
-                        { id: Math.random(), num: startNum + 2, col }
-                    ];
-                } else {
-                    const num = Math.floor(Math.random() * 9) + 1;
-                    const shuffledCols = [...COLORS].sort(() => 0.5 - Math.random());
-                    return [
-                        { id: Math.random(), num, col: shuffledCols[0] },
-                        { id: Math.random(), num, col: shuffledCols[1] },
-                        { id: Math.random(), num, col: shuffledCols[2] }
-                    ];
-                }
-            };
+  <div id="mid-row">
 
-            const startNewGame = () => {
-                // Guaranteed win set + 6 random tiles = 9 tiles total
-                const winSet = generateWinningSet();
-                const randomTiles = Array.from({ length: 6 }, generateTile);
-                setPool([...winSet, ...randomTiles].sort(() => 0.5 - Math.random()));
-                setSelected([]);
-                setMsg("搵 3 粒：同色順序 或 唔同色同字");
-            };
+    <div id="ref-col">
+      <div class="ref-label">上次</div>
+    </div>
 
-            const drawCardsManual = () => {
-                // Manually add 3 tiles only when user asks
-                if (pool.length >= 12) {
-                    setMsg("畫面牌太多喇，試下搵答案！");
-                    return;
-                }
-                const extra = Array.from({ length: 3 }, generateTile);
-                setPool([...pool, ...extra]);
-                setMsg("已加 3 粒新牌！");
-            };
+    <div id="right-section">
 
-            const checkWin = (set) => {
-                const sorted = [...set].sort((a, b) => a.num - b.num);
-                const isRun = sorted.every(t => t.col === sorted[0].col) && 
-                              (sorted[1].num === sorted[0].num + 1 && sorted[2].num === sorted[1].num + 1);
-                const colors = new Set(set.map(t => t.col));
-                const isGroup = set.every(t => t.num === set[0].num) && colors.size === 3;
-                return isRun || isGroup;
-            };
+      <!-- grid scrolls within this wrapper -->
+      <div id="grid-wrap">
+        <div id="grid"></div>
+      </div>
 
-            const handleTileClick = (t) => {
-                if (selected.find(s => s.id === t.id)) return;
-                const next = [...selected, t];
-                setSelected(next);
+      <!-- splitter always directly below last card row -->
+      <div id="splitter"></div>
 
-                if (next.length === 3) {
-                    if (checkWin(next)) {
-                        setMsg("🎉 啱晒！好叻呀！");
-                        updateScore(10);
-                        const nextRounds = rounds + 1;
-                        setRounds(nextRounds);
-                        if (nextRounds > 0 && nextRounds % 10 === 0) setShowMilestone(true);
-                        setTimeout(startNewGame, 1500);
-                    } else {
-                        setMsg("❌ 唔係呢個，再試下");
-                        setTimeout(() => setSelected([]), 1000);
-                    }
-                }
-            };
+      <!-- slots + buttons always just below splitter -->
+      <div id="bottom-row">
+        <div id="slots-area">
+          <div class="slot" id="slot0"></div>
+          <div class="slot" id="slot1"></div>
+          <div class="slot" id="slot2"></div>
+          <div id="slot-count">已選<br>0/3</div>
+        </div>
+        <div id="btn-col">
+          <button class="btn-draw" onclick="drawCards()">加牌 +3</button>
+          <button class="btn-exit2" onclick="exitGame()">切換玩家</button>
+        </div>
+      </div>
 
-            const updateScore = (pts) => {
-                const updated = profiles.map(p => {
-                    if (p.name === user.name) {
-                        const s = p.score + pts;
-                        return { ...p, score: s, best: Math.max(p.best || 0, s) };
-                    }
-                    return p;
-                });
-                setProfiles(updated);
-                localStorage.setItem('profiles', JSON.stringify(updated));
-                setUser(updated.find(p => p.name === user.name));
-            };
+    </div>
+  </div>
+</div>
 
-            if (!user) {
-                return (
-                    <div className="overlay">
-                        <h1 style={{fontSize: '32px', margin: '30px 0'}}>請選擇名字</h1>
-                        {profiles.map(p => (
-                            <div key={p.name} className="profile-card">
-                                <div onClick={() => setUser(p)} style={{fontSize: '26px', flexGrow: 1, fontWeight: 'bold'}}>{p.name}</div>
-                                <button className="btn-del" onClick={() => {
-                                    const filtered = profiles.filter(x => x.name !== p.name);
-                                    setProfiles(filtered);
-                                    localStorage.setItem('profiles', JSON.stringify(filtered));
-                                }}>刪除</button>
-                            </div>
-                        ))}
-                        <div style={{marginTop: '20px', width: '90%', textAlign: 'center'}}>
-                            <input id="n" className="input-big" placeholder="新玩家名字" />
-                            <button className="btn-big" style={{width: '100%'}} onClick={() => {
-                                const v = document.getElementById('n').value;
-                                if(v) { 
-                                    const newList = [...profiles, {name: v, score: 0, best: 0}];
-                                    setProfiles(newList);
-                                    localStorage.setItem('profiles', JSON.stringify(newList));
-                                    document.getElementById('n').value=''; 
-                                }
-                            }}>新增名字</button>
-                        </div>
-                    </div>
-                );
-            }
+<div id="milestone" onclick="closeMilestone()">
+  <div id="ms-box" onclick="event.stopPropagation()">
+    <h2>🎉 恭喜晒！</h2>
+    <p id="ms-msg">你已經玩咗 10 局喇！</p>
+    <p style="font-weight:bold">好叻呀，休息下再玩？</p>
+    <button onclick="closeMilestone()">繼續玩</button>
+  </div>
+</div>
 
-            return (
-                <React.Fragment>
-                    <div className="stats-bar">
-                        <div className="rank-box">
-                            {user.name} ({RANKS[Math.min(Math.floor(user.score/50), 4)]})
-                        </div>
-                        <div className="best-box">最高: {user.best} | 分數: {user.score}</div>
-                    </div>
+<script>
+const COLORS = ['#FF3B30','#FFCC00','#007AFF','#555555'];
+const RANKS  = ['新手','入門生','數字達人','魔力橋大師','傳奇至尊'];
 
-                    <div className="instruction">{msg}</div>
+let profiles    = JSON.parse(localStorage.getItem('profiles') || '[]');
+let cur         = null;
+let pool        = [];
+let selected    = [];
+let rounds      = 0;
+let lastCorrect = null;
+let timerIv     = null;
+let sessionStart = 0;
+let elapsed     = 0;
+let bannerTO    = null;
 
-                    <div className="grid">
-                        {pool.map(t => (
-                            <div key={t.id} onClick={() => handleTileClick(t)} className="tile" 
-                                 style={{ backgroundColor: t.col, opacity: selected.find(s => s.id === t.id) ? 0.2 : 1 }}>
-                                {t.num}
-                            </div>
-                        ))}
-                    </div>
+const $  = id => document.getElementById(id);
+const fmt = s  => String(Math.floor(s/60)).padStart(2,'0') + ':' + String(s%60).padStart(2,'0');
+const save = () => localStorage.setItem('profiles', JSON.stringify(profiles));
+const rank = s  => RANKS[Math.min(Math.floor(s/50), 4)];
 
-                    <div className="slots">
-                        {[0, 1, 2].map(i => (
-                            <div key={i} className="slot">
-                                {selected[i] && <div className="tile" style={{backgroundColor: selected[i].col, height: '80px', width: '60px', fontSize: '35px', border: '2px solid white'}}>{selected[i].num}</div>}
-                            </div>
-                        ))}
-                    </div>
+/* ── Profile page ── */
+function renderProfiles() {
+  const list = $('profile-list');
+  list.innerHTML = '';
+  profiles.forEach(p => {
+    const safe = p.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const c = document.createElement('div');
+    c.className = 'profile-card';
+    c.innerHTML = `
+      <div style="flex:1;min-width:0">
+        <div class="p-name">${p.name}</div>
+        <div class="p-meta">本局: ${p.score||0} · 最佳: ${p.best||0}<br>遊玩: ${fmt(p.totalTime||0)}</div>
+      </div>
+      <button class="btn-go"  onclick="startGame('${safe}')">▶ 開始</button>
+      <button class="btn-del" onclick="delPlayer('${safe}')">刪</button>`;
+    list.appendChild(c);
+  });
+}
 
-                    <div className="controls">
-                        <button className="draw-btn" onClick={drawCardsManual}>找不到組合？加牌</button>
-                        <button className="exit-btn" onClick={() => setUser(null)}>切換玩家 / 離開</button>
-                    </div>
+function addPlayer() {
+  const inp = $('new-name'), v = inp.value.trim();
+  if (!v || profiles.find(p => p.name === v)) { inp.value = ''; return; }
+  profiles.push({ name:v, score:0, best:0, totalTime:0 });
+  save(); inp.value = ''; renderProfiles();
+}
 
-                    {showMilestone && (
-                        <div className="popup" onClick={() => setShowMilestone(false)}>
-                            <h2 style={{fontSize: '32px', color: '#4cd964'}}>🎉 恭喜晒！</h2>
-                            <p style={{fontSize: '22px'}}>你今日已經玩咗 10 局喇！</p>
-                            <p style={{fontSize: '22px', fontWeight: 'bold'}}>好叻呀，休息下再玩？</p>
-                            <button className="btn-big" style={{marginTop: '15px', width: '100%'}}>繼續玩</button>
-                        </div>
-                    )}
-                </React.Fragment>
-            );
+function delPlayer(name) {
+  profiles = profiles.filter(p => p.name !== name);
+  save(); renderProfiles();
+}
+
+function toggleRules() { $('rules-panel').classList.toggle('open'); }
+
+/* ── Game start / exit ── */
+function startGame(name) {
+  cur = profiles.find(p => p.name === name);
+  // reset session score to 0 for this play session
+  cur = { ...cur, score: 0 };
+  rounds = 0; elapsed = 0; selected = []; lastCorrect = null;
+  $('screen-profile').style.display = 'none';
+  $('screen-game').style.display    = 'flex';
+  refreshStats(); startTimer(); renderRefCol(); newRound();
+}
+
+function exitGame() {
+  stopTimer();
+  const secs = Math.floor((Date.now() - sessionStart) / 1000);
+  const p = profiles.find(p => p.name === cur.name);
+  if (p) { p.totalTime = (p.totalTime||0) + secs; save(); }
+  cur = null;
+  $('screen-game').style.display    = 'none';
+  $('screen-profile').style.display = 'flex';
+  renderProfiles();
+}
+
+/* ── Timer ── */
+function startTimer() {
+  sessionStart = Date.now();
+  timerIv = setInterval(() => {
+    elapsed = Math.floor((Date.now() - sessionStart) / 1000);
+    $('stat-timer').textContent = '⏱ ' + fmt(elapsed);
+  }, 1000);
+}
+function stopTimer() { clearInterval(timerIv); timerIv = null; }
+
+/* ── Stats bar ── */
+function refreshStats() {
+  $('stat-name').textContent  = cur.name + ' · ' + rank(cur.best||0);
+  $('stat-score').innerHTML   = '個人最佳: ' + (cur.best||0) + '<br>本局分數: ' + (cur.score||0);
+}
+
+/* ── Tile helpers ── */
+function randTile() {
+  return {
+    id:  Math.random(),
+    num: Math.floor(Math.random() * 9) + 1,
+    col: COLORS[Math.floor(Math.random() * COLORS.length)]
+  };
+}
+
+/* Build tiles that guarantee a win combo exists WITH pool */
+function genWinTiles(existingPool) {
+  for (let attempt = 0; attempt < 40; attempt++) {
+    if (existingPool.length >= 2 && Math.random() > 0.35) {
+      const shuffled = [...existingPool].sort(() => 0.5 - Math.random());
+      const a = shuffled[0], b = shuffled[1];
+      // Try group
+      if (a.num === b.num && a.col !== b.col) {
+        const used = new Set([a.col, b.col]);
+        const free = COLORS.filter(c => !used.has(c));
+        if (free.length > 0)
+          return [{ id:Math.random(), num:a.num, col:free[Math.floor(Math.random()*free.length)] }];
+      }
+      // Try run
+      if (a.col === b.col) {
+        const ns = [a.num, b.num].sort((x,y) => x-y);
+        const diff = ns[1] - ns[0];
+        let candidates = [];
+        if (diff === 1) candidates = [ns[0]-1, ns[1]+1];
+        else if (diff === 2) candidates = [ns[0]+1];
+        const valid = candidates.filter(n => n >= 1 && n <= 9);
+        if (valid.length > 0) {
+          const n = valid[Math.floor(Math.random()*valid.length)];
+          return [{ id:Math.random(), num:n, col:a.col }];
         }
+      }
+    }
+    // Standalone 3-tile combo
+    if (Math.random() > 0.5) {
+      const s = Math.floor(Math.random()*7)+1;
+      const c = COLORS[Math.floor(Math.random()*COLORS.length)];
+      return [
+        { id:Math.random(), num:s,   col:c },
+        { id:Math.random(), num:s+1, col:c },
+        { id:Math.random(), num:s+2, col:c }
+      ];
+    } else {
+      const n  = Math.floor(Math.random()*9)+1;
+      const cc = [...COLORS].sort(() => 0.5-Math.random());
+      return [
+        { id:Math.random(), num:n, col:cc[0] },
+        { id:Math.random(), num:n, col:cc[1] },
+        { id:Math.random(), num:n, col:cc[2] }
+      ];
+    }
+  }
+  // Fallback
+  const c = COLORS[0];
+  return [
+    { id:Math.random(), num:1, col:c },
+    { id:Math.random(), num:2, col:c },
+    { id:Math.random(), num:3, col:c }
+  ];
+}
 
-        const root = ReactDOM.createRoot(document.getElementById('root'));
-        root.render(<App />);
-    </script>
+/* ── New round: 9 random tiles, no guaranteed win ── */
+function newRound() {
+  pool = Array.from({ length: 9 }, randTile);
+  selected = [];
+  renderGrid(); renderSlots();
+  setMsg('搵 3 粒：同色順序 或 唔同色同字');
+}
+
+/* ── Draw: max 12, guaranteed win in new tiles ── */
+function drawCards() {
+  if (pool.length >= 12) {
+    setMsg('已有12粒，試下搵答案！');
+    return;
+  }
+  const winTiles = genWinTiles(pool);
+  const padCount = 3 - winTiles.length;
+  const extras   = Array.from({ length: padCount }, randTile);
+  pool = [...pool, ...winTiles, ...extras];
+  renderGrid();
+  setMsg('已加 3 粒新牌，必有答案！');
+}
+
+/* ── Render ── */
+function renderGrid() {
+  const g = $('grid');
+  g.innerHTML = '';
+  pool.forEach(t => {
+    const d = document.createElement('div');
+    d.className = 'tile' + (selected.find(s => s.id === t.id) ? ' sel' : '');
+    d.style.background = t.col;
+    d.textContent = t.num;
+    d.onclick = () => clickTile(t);
+    g.appendChild(d);
+  });
+}
+
+function renderSlots() {
+  for (let i = 0; i < 3; i++) {
+    const sl = $('slot'+i);
+    sl.innerHTML = '';
+    if (selected[i]) {
+      const d = document.createElement('div');
+      d.className = 'slot-tile';
+      d.style.background = selected[i].col;
+      d.textContent = selected[i].num;
+      sl.appendChild(d);
+    }
+  }
+  $('slot-count').innerHTML = '已選<br>' + selected.length + '/3';
+}
+
+function renderRefCol() {
+  const col = $('ref-col');
+  col.innerHTML = '<div class="ref-label">上次</div>';
+  if (lastCorrect) {
+    lastCorrect.forEach(t => {
+      const d = document.createElement('div');
+      d.className = 'ref-tile';
+      d.style.background = t.col;
+      d.textContent = t.num;
+      col.appendChild(d);
+    });
+  }
+}
+
+function setMsg(t) { $('instr-text').textContent = t; }
+
+/* ── Win check ── */
+function checkWin(set) {
+  const s = [...set].sort((a,b) => a.num - b.num);
+  const isRun   = s.every(t => t.col === s[0].col)
+                  && s[1].num === s[0].num + 1
+                  && s[2].num === s[1].num + 1;
+  const isGroup = set.every(t => t.num === set[0].num)
+                  && new Set(set.map(t => t.col)).size === 3;
+  return isRun || isGroup;
+}
+
+/* ── Tile click ── */
+function clickTile(t) {
+  if (selected.find(s => s.id === t.id)) return;
+  selected = [...selected, t];
+  renderSlots(); renderGrid();
+
+  if (selected.length === 3) {
+    if (checkWin(selected)) {
+      lastCorrect = [...selected];
+      renderRefCol();
+
+      const p = profiles.find(p => p.name === cur.name);
+      p.score   = (p.score||0) + 10;
+      p.best    = Math.max(p.best||0, p.score);
+      cur       = { ...p };
+      save(); refreshStats();
+
+      rounds++;
+      if (rounds % 10 === 0) {
+        $('ms-msg').textContent = `你已經玩咗 ${rounds} 局喇！`;
+        $('milestone').classList.add('show');
+      }
+      showBanner();
+      newRound();
+    } else {
+      setMsg('❌ 唔係呢個，再試下');
+      setTimeout(() => {
+        selected = [];
+        renderGrid(); renderSlots();
+        setMsg('搵 3 粒：同色順序 或 唔同色同字');
+      }, 900);
+    }
+  }
+}
+
+/* ── Blink banner ── */
+function showBanner() {
+  const b = $('banner'), bt = $('banner-text');
+  bt.style.animation = 'none';
+  bt.offsetHeight;
+  bt.style.animation = '';
+  b.classList.add('show');
+  clearTimeout(bannerTO);
+  bannerTO = setTimeout(() => b.classList.remove('show'), 1900);
+}
+
+/* ── Milestone ── */
+function closeMilestone() { $('milestone').classList.remove('show'); }
+
+/* ── Enter key ── */
+$('new-name').addEventListener('keydown', e => { if (e.key === 'Enter') addPlayer(); });
+
+/* ── Init ── */
+renderProfiles();
+</script>
 </body>
 </html>
